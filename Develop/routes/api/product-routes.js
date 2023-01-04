@@ -1,13 +1,26 @@
-const router = require('express').Router();
-const { Product, Category, Tag, ProductTag } = require('../../models');
+const router = require("express").Router();
+const { Product, Category, Tag, ProductTag } = require("../../models");
 
 // The `/api/products` endpoint
 
 //  -- Find All Products -- //
 router.get("/", async (req, res) => {
+  // find all products
+  // be sure to include its associated Category and Tag data
   try {
     const productData = await Product.findAll({
-      include: [{ Product }],
+      attributes: ["id", "product_name", "price", "stock", "category_id"],
+      include: [
+        {
+          model: Tag,
+          attributes: ["id", "tag_name"],
+          through: "ProductTag",
+        },
+        {
+          model: Category,
+          attributes: ["id", "category_name"],
+        },
+      ],
     });
     res.status(200).json(productData);
   } catch (err) {
@@ -19,7 +32,17 @@ router.get("/", async (req, res) => {
 router.get("/:id", async (req, res) => {
   try {
     const productData = await Product.findByPk(req.params.id, {
-      include: [{ model: Product }],
+      include: [
+        {
+          model: Tag,
+          attributes: ["id", "tag_name"],
+          through: "ProductTag",
+        },
+        {
+          model: Category,
+          attributes: ["id", "category_name"],
+        },
+      ],
     });
     if (!productData) {
       res.status(404).json({ message: "No Product Found By This ID!" });
@@ -32,6 +55,8 @@ router.get("/:id", async (req, res) => {
 });
 
 //  -- Create a New Product -- //
+// create new product
+router.post("/", (req, res) => {
   /* req.body should look like this...
     {
       product_name: "Basketball",
@@ -40,15 +65,6 @@ router.get("/:id", async (req, res) => {
       tagIds: [1, 2, 3, 4]
     }
   */
-    router.post("/", async (req, res) => {
-      try {
-        const productData = await Product.create(req.body);
-        res.status(200).json(productData);
-      } catch (err) {
-        res.status(400).json(err);
-      }
-    });
-
   Product.create(req.body)
     .then((product) => {
       // if there's product tags, we need to create pairings to bulk create in the ProductTag model
@@ -69,9 +85,10 @@ router.get("/:id", async (req, res) => {
       console.log(err);
       res.status(400).json(err);
     });
+});
 
 // update product
-router.put('/:id', (req, res) => {
+router.put("/:id", (req, res) => {
   // update product data
   Product.update(req.body, {
     where: {
@@ -112,8 +129,23 @@ router.put('/:id', (req, res) => {
     });
 });
 
-router.delete('/:id', (req, res) => {
-  // delete one product by its `id` value
+router.delete("/:id", async (req, res) => {
+  try {
+    const productData = await Product.destroy({
+      where: {
+        id: req.params.id,
+      },
+    });
+
+    if (!productData) {
+      res.status(404).json({ message: "No Category Found With This ID!" });
+      return;
+    }
+
+    res.status(200).json(productData);
+  } catch (err) {
+    res.status(500).json(err);
+  }
 });
 
 module.exports = router;
