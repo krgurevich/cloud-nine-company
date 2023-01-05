@@ -28,8 +28,11 @@ THEN I am able to successfully create, update, and delete data in my database
 ## Technical Requirements
 
 Uses MySQL2
+
 Uses Sequelize
+
 Uses Express.js API
+
 Uses dotenv package
 
 ## License
